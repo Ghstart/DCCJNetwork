@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'DCCJNetwork_Example' do
+  pod 'DCCJNetwork', :path => '../'
+
+  target 'DCCJNetwork_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
