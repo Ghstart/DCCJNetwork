@@ -1,0 +1,6 @@
+framework module DCCJNetwork {
+  umbrella header "DCCJNetwork-umbrella.h"
+
+  export *
+  module * { export * }
+}

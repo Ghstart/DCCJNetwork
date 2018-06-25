@@ -43,10 +43,10 @@
 		680D37C855C46F9393C8144B /* Pods-DCCJNetwork_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-DCCJNetwork_Example.release.xcconfig"; path = "Pods/Target Support Files/Pods-DCCJNetwork_Example/Pods-DCCJNetwork_Example.release.xcconfig"; sourceTree = "<group>"; };
 		6ACF78328391E7E596FD0A16 /* Pods_DCCJNetwork_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_DCCJNetwork_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		81CB362F68EBD7D556B57700 /* Pods_DCCJNetwork_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_DCCJNetwork_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		9A62389401B2B4D72F39F6E4 /* DCCJNetwork.podspec */ = {isa = PBXFileReference; includeInIndex = 1; name = DCCJNetwork.podspec; path = ../DCCJNetwork.podspec; sourceTree = "<group>"; };
-		C18F3800E461B74658B2AF56 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
+		9A62389401B2B4D72F39F6E4 /* DCCJNetwork.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = DCCJNetwork.podspec; path = ../DCCJNetwork.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		C18F3800E461B74658B2AF56 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		F1BA04981460813F7CF8145F /* Pods-DCCJNetwork_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-DCCJNetwork_Tests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-DCCJNetwork_Tests/Pods-DCCJNetwork_Tests.debug.xcconfig"; sourceTree = "<group>"; };
-		F63A54F05701ADE5AE83B55E /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		F63A54F05701ADE5AE83B55E /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
