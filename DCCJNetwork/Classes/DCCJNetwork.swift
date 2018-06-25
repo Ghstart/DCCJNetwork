@@ -107,7 +107,7 @@ public class DarkCardsURLSessionDataTask: URLSessionDataTaskProtocol {
     }
 }
 
-public final class DCCJNetwork: Client {
+@objc class DCCJNetwork: NSObject, Client {
     internal let urlSession: URLSessionProtocol
     public static let shared = DCCJNetwork(urlSession: Config.urlSession)
     public var host: String = ""
