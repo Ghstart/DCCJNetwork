@@ -112,14 +112,14 @@ public final class DCCJNetwork: Client {
     public static let shared = DCCJNetwork(urlSession: Config.urlSession)
     public var host: String = ""
     
-    public var LOGINKEY: String = ""
-    public var MD5F    : (String) -> String = DCCJNetwork.shared.md5
+    private var LOGINKEY: String = ""
+    private var MD5F    : (String) -> String = DCCJNetwork.shared.md5
     
-    internal init(urlSession: URLSessionProtocol) {
+    private init(urlSession: URLSessionProtocol) {
         self.urlSession = urlSession
     }
     
-    func config(host: String, logKey: String, md5F: @escaping (String) -> String) {
+    public func config(host: String, logKey: String, md5F: @escaping (String) -> String) {
         DCCJNetwork.shared.host     = host
         DCCJNetwork.shared.LOGINKEY = logKey
         DCCJNetwork.shared.MD5F     = md5F
