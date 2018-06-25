@@ -109,7 +109,7 @@ public class DarkCardsURLSessionDataTask: URLSessionDataTaskProtocol {
 
 public final class DCCJNetwork: Client {
     internal let urlSession: URLSessionProtocol
-    static let shared = DCCJNetwork(urlSession: Config.urlSession)
+    public static let shared = DCCJNetwork(urlSession: Config.urlSession)
     public var host: String = ""
     
     public var LOGINKEY: String = ""
