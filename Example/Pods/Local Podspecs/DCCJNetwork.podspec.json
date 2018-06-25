@@ -1,8 +1,8 @@
 {
   "name": "DCCJNetwork",
   "version": "0.1.0",
-  "summary": "A short description of DCCJNetwork.",
-  "description": "TODO: Add long description of the pod here.",
+  "summary": "This is a lightweight network framework.",
+  "description": "This is a lightweight network framework created by DCCJ.",
   "homepage": "https://github.com/Ghstart/DCCJNetwork",
   "license": {
     "type": "MIT",
@@ -16,7 +16,7 @@
     "tag": "0.1.0"
   },
   "platforms": {
-    "ios": "8.0"
+    "ios": "9.0"
   },
   "source_files": "DCCJNetwork/Classes/**/*"
 }
