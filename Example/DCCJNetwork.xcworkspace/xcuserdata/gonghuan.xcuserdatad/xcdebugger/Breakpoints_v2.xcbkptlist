@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Bucket
+   type = "0"
+   version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../DCCJNetwork/Classes/DCCJNetwork.swift"
+            timestampString = "551762286.1674941"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "87"
+            endingLineNumber = "87"
+            landmarkName = "requestBy(_:completion:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "DCCJNetwork.DCCJNetwork.requestBy&lt;A where A: DCCJNetwork.Request&gt;(A, completion: (Swift.Optional&lt;Foundation.Data&gt;, Swift.Optional&lt;DCCJNetwork.DataManagerError&gt;) -&gt; ()) -&gt; ()"
+                  moduleName = "DCCJNetwork"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/gonghuan/Desktop/DCCJNetwork/DCCJNetwork/Classes/DCCJNetwork.swift"
+                  timestampString = "551762286.180202"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "87"
+                  endingLineNumber = "87"
+                  offsetFromSymbolStart = "1092">
+               </Location>
+               <Location
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (Swift.Optional&lt;Foundation.Data&gt;, Swift.Optional&lt;__ObjC.URLResponse&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in DCCJNetwork.DCCJNetwork.requestBy&lt;A where A: DCCJNetwork.Request&gt;(A, completion: (Swift.Optional&lt;Foundation.Data&gt;, Swift.Optional&lt;DCCJNetwork.DataManagerError&gt;) -&gt; ()) -&gt; ()"
+                  moduleName = "DCCJNetwork"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/gonghuan/Desktop/DCCJNetwork/DCCJNetwork/Classes/DCCJNetwork.swift"
+                  timestampString = "551762286.181892"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "88"
+                  endingLineNumber = "88"
+                  offsetFromSymbolStart = "44">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
+</Bucket>

@@ -62,69 +62,24 @@ public protocol Client {
     func requestBy<T: Request>(_ r: T, completion: @escaping (Data?, DataManagerError?) -> Void)
 }
 
-public struct Config {
-    static func isUITesting() -> Bool {
-        return ProcessInfo.processInfo.arguments.contains("UI-Testing")
-    }
+public final class DCCJNetwork {
     
-    static var urlSession: URLSessionProtocol = {
-        if isUITesting() {
-            return BankCardsListURLSession()
-        } else {
-            return URLSession.shared as! URLSessionProtocol
-        }
-    }()
-}
-
-public class BankCardsListURLSession: URLSessionProtocol {
-    public func dataTask(with request: URLRequest, completionHandler: @escaping DataTaskHandler) -> URLSessionDataTaskProtocol {
-        return DarkCardsURLSessionDataTask(request: request, completon: completionHandler)
-    }
-}
-
-public class DarkCardsURLSessionDataTask: URLSessionDataTaskProtocol {
-    private let request: URLRequest
-    private let completion: DataTaskHandler
-    
-    init(request: URLRequest, completon: @escaping DataTaskHandler) {
-        self.request = request
-        self.completion = completon
-    }
-    
-    public func resume() {
-        let json = ProcessInfo.processInfo.environment["FakeJSON"]
-        if let json = json {
-            let response = HTTPURLResponse(url: request.url!,
-                                           statusCode: 200,
-                                           httpVersion: nil,
-                                           headerFields: nil)
-            
-            let data = json.data(using: .utf8)!
-            
-            
-            completion(data, response, nil)
-        }
-    }
-}
-
-@objc class DCCJNetwork: NSObject, Client {
-    internal let urlSession: URLSessionProtocol
-    public static let shared = DCCJNetwork(urlSession: Config.urlSession)
-    public var host: String = ""
-    
+    public static let shared = DCCJNetwork()
+    private var urlSession: URLSession = URLSession.shared
+    public  var host: String = ""
     private var LOGINKEY: String = ""
-    private var MD5F    : (String) -> String = DCCJNetwork.shared.md5
     
-    private init(urlSession: URLSessionProtocol) {
-        self.urlSession = urlSession
-    }
+    public typealias md5Function = (String) -> String
+    public var MD5F    : md5Function?
     
-    public func config(host: String, logKey: String, md5F: @escaping (String) -> String) {
+    private init() {}
+    
+    public func config(host: String, logKey: String, md5F: @escaping md5Function) {
         DCCJNetwork.shared.host     = host
         DCCJNetwork.shared.LOGINKEY = logKey
         DCCJNetwork.shared.MD5F     = md5F
     }
-    
+ 
     public func requestBy<T: Request>(_ r: T, completion: @escaping (Data?, DataManagerError?) -> Void) {
         let url = URL(string: host.appending(r.path))!
         guard let request = getRequest(type: r.method, initURL: url, httpBody: r.paramters, isSign: true) else { return }
@@ -159,10 +114,11 @@ public class DarkCardsURLSessionDataTask: URLSessionDataTaskProtocol {
             }
         }.resume()
     }
+ 
 
     // MARK: -- 生成Request
     private func getRequest(type: HTTPMethod, initURL: URL, httpBody: Dictionary<String, Any>? = nil, isSign: Bool = false) -> URLRequest? {
-        
+        guard let md = DCCJNetwork.shared.MD5F else { return nil }
         var request = URLRequest(url: initURL)
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpMethod = type == .GET ? "GET" : "POST"
@@ -182,7 +138,7 @@ public class DarkCardsURLSessionDataTask: URLSessionDataTaskProtocol {
                 if let pathStr = pathStr {
                     totalStr = "\(String(describing: pathStr))&\(encodeStr)"
                 }
-                let signMd5  = DCCJNetwork.shared.MD5F(totalStr)
+                let signMd5  = md(totalStr)
                 request.addValue(signMd5, forHTTPHeaderField: "Signature")
             }
         }
@@ -214,11 +170,7 @@ public class DarkCardsURLSessionDataTask: URLSessionDataTaskProtocol {
         kvAll.append(DCCJNetwork.shared.LOGINKEY)
         
         return kvAll
-    }
-    
-    private func md5(_: String) -> String {
-        return ""
-    }
+    } 
 }
 
 
