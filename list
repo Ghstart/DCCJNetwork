@@ -1,0 +1,27 @@
+
+artsy
+- Type: git (master)
+- URL:  https://github.com/Artsy/Specs.git
+- Path: /Users/gonghuan/.cocoapods/repos/artsy
+
+ghstart
+- Type: git (tags/0.1.0)
+- URL:  https://github.com/Ghstart/PickPodWed.git
+- Path: /Users/gonghuan/.cocoapods/repos/ghstart
+
+master
+- Type: git (master)
+- URL:  https://github.com/CocoaPods/Specs.git
+- Path: /Users/gonghuan/.cocoapods/repos/master
+
+O2Specs
+- Type: git (master)
+- URL:  https://github.com/Ghstart/O2Specs.git
+- Path: /Users/gonghuan/.cocoapods/repos/O2Specs
+
+summertian4
+- Type: git (master)
+- URL:  https://github.com/summertian4/ZLYSpec.git
+- Path: /Users/gonghuan/.cocoapods/repos/summertian4
+
+5 repos
