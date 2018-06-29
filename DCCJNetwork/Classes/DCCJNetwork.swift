@@ -69,15 +69,18 @@ public final class DCCJNetwork {
     public  var host: String = ""
     private var LOGINKEY: String = ""
     
-    public typealias md5Function = (String) -> String
-    public var MD5F    : md5Function?
+    public typealias EncryptFunction    = (String) -> String
+    public typealias UserAccountIsFired = () -> Void
+    
+    public var encryptF: EncryptFunction?
+    public var userAccountIsFired: UserAccountIsFired?
     
     private init() {}
     
-    public func config(host: String, logKey: String, md5F: @escaping md5Function) {
+    public func config(host: String, logKey: String, encryptMethod: @escaping EncryptFunction) {
         DCCJNetwork.shared.host     = host
         DCCJNetwork.shared.LOGINKEY = logKey
-        DCCJNetwork.shared.MD5F     = md5F
+        DCCJNetwork.shared.encryptF = encryptMethod
     }
  
     public func requestBy<T: Request>(_ r: T, completion: @escaping (Data?, DataManagerError?) -> Void) {
@@ -95,7 +98,7 @@ public final class DCCJNetwork {
                                 let code = returnDic["resultCode"] as? Int,
                                 code == 201 {
                                 // 清除所有登录信息
-                                // UserManager.shared.clear()
+                                if let userFired = DCCJNetwork.shared.userAccountIsFired { userFired() }
                                 completion(nil, .customError(message: message))
                             } else {
                                 completion(data, nil)
@@ -118,7 +121,7 @@ public final class DCCJNetwork {
 
     // MARK: -- 生成Request
     private func getRequest(type: HTTPMethod, initURL: URL, httpBody: Dictionary<String, Any>? = nil, isSign: Bool = false) -> URLRequest? {
-        guard let md = DCCJNetwork.shared.MD5F else { return nil }
+        guard let encrypt = DCCJNetwork.shared.encryptF else { return nil }
         var request = URLRequest(url: initURL)
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpMethod = type == .GET ? "GET" : "POST"
@@ -138,7 +141,7 @@ public final class DCCJNetwork {
                 if let pathStr = pathStr {
                     totalStr = "\(String(describing: pathStr))&\(encodeStr)"
                 }
-                let signMd5  = md(totalStr)
+                let signMd5  = encrypt(totalStr)
                 request.addValue(signMd5, forHTTPHeaderField: "Signature")
             }
         }

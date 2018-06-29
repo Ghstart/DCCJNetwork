@@ -14,10 +14,15 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // config host、logkey、md5 function
-        DCCJNetwork.shared.config(host: "https://www.host.com/", logKey: "You-Private-Key") { (md5) -> String in
-            // md5
+        // config host、logkey、encrypt function
+        DCCJNetwork.shared.config(host: "https://www.host.com/", logKey: "You-Private-Key") { (encrypt) -> String in
+            // encrypt
             return ""
+        }
+        
+        //
+        DCCJNetwork.shared.userAccountIsFired = {
+            
         }
 
         // send request
