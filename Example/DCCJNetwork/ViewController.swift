@@ -20,10 +20,6 @@ class ViewController: UIViewController {
             return ""
         }
         
-        //
-        DCCJNetwork.shared.userAccountIsFired = {
-            
-        }
 
         // send request
         DCCJNetwork.shared.requestBy(BankCardsRequest.bankLists(accessToken: "token")) { (data, error) in

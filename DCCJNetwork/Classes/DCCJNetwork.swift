@@ -12,19 +12,36 @@ public enum DataManagerError: Error {
     case failedRequest                  // 请求失败
     case invalidResponse                // 响应失败
     case unknow                         // 未知错误
-    case customError(message: String)   // 自定义错误
+    case customError(message: String, errCode: Int)   // 自定义错误
     
     public var errorMessage: String {
         switch self {
         case .failedRequest:
             return "请求失败"
         case .invalidResponse:
-            return "相应失败"
+            return "响应失败"
         case .unknow:
             return "未知错误"
-        case .customError(let message):
+        case .customError(let message, _):
             return message
         }
+    }
+    
+    public var errorCode: Int {
+        switch self {
+        case .failedRequest:
+            return -1024
+        case .invalidResponse:
+            return -1025
+        case .unknow:
+            return -1026
+        case .customError(_, let code):
+            return code
+        }
+    }
+    
+    public func error() -> NSError {
+        return NSError(domain: self.errorMessage, code: self.errorCode, userInfo: nil)
     }
 }
 
@@ -59,32 +76,46 @@ public protocol Request {
 
 public protocol Client {
     var host: String { get }
-    func requestBy<T: Request>(_ r: T, completion: @escaping (Data?, DataManagerError?) -> Void)
+    func requestBy<T: Request>(_ r: T, completion: @escaping ([String: Any]?, DataManagerError?) -> Void)
 }
 
-public final class DCCJNetwork {
-    
+protocol DCCJNetworkDelegate: class {
+    func errorCodeEqualTo201()
+}
+
+protocol DCCJNetworkDataSource: class {
+    func customHttpHeaders() -> Dictionary<String, String>
+}
+
+public final class DCCJNetwork: NSObject {
+   
     public static let shared = DCCJNetwork()
-    private var urlSession: URLSession = URLSession.shared
-    public  var host: String = ""
-    private var LOGINKEY: String = ""
+    private var urlSession: URLSession  = URLSession.shared
     
-    public typealias EncryptFunction    = (String) -> String
-    public typealias UserAccountIsFired = () -> Void
+    private var host: String            = ""
+    private var LOGINKEY: String        = ""
+    private var encryptF: ((String) -> String)? = nil
     
-    public var encryptF: EncryptFunction?
-    public var userAccountIsFired: UserAccountIsFired?
+    weak var delegate: DCCJNetworkDelegate?
+    weak var dataSource: DCCJNetworkDataSource?
     
-    private init() {}
+    private override init() {}
     
-    public func config(host: String, logKey: String, encryptMethod: @escaping EncryptFunction) {
+    public func config(host: String, logKey: String, encryptMethod: ((String) -> String)?) {
         DCCJNetwork.shared.host     = host
         DCCJNetwork.shared.LOGINKEY = logKey
         DCCJNetwork.shared.encryptF = encryptMethod
     }
  
-    public func requestBy<T: Request>(_ r: T, completion: @escaping (Data?, DataManagerError?) -> Void) {
-        let url = URL(string: host.appending(r.path))!
+    public func requestBy<T: Request>(_ r: T, completion: @escaping ([String: Any]?, DataManagerError?) -> Void) {
+        var url: URL
+        if r.path.hasPrefix("http") || r.path.hasPrefix("https") {
+            url = URL(string: r.path)!
+        } else if (!r.path.hasPrefix("http") && !r.path.hasPrefix("https") && !host.isEmpty) {
+            url = URL(string: host.appending(r.path))!
+        } else {
+            fatalError("unknow host or path!!!")
+        }
         guard let request = getRequest(type: r.method, initURL: url, httpBody: r.paramters, isSign: true) else { return }
         
         self.urlSession.dataTask(with: request) { (data, response, error) in
@@ -97,11 +128,10 @@ public final class DCCJNetwork {
                             if let message = returnDic["resultMessage"] as? String,
                                 let code = returnDic["resultCode"] as? Int,
                                 code == 201 {
-                                // 清除所有登录信息
-                                if let userFired = DCCJNetwork.shared.userAccountIsFired { userFired() }
-                                completion(nil, .customError(message: message))
+                                if let callbackErrorCode201 = self.delegate?.errorCodeEqualTo201 { callbackErrorCode201() }
+                                completion(nil, .customError(message: message, errCode: -9999))
                             } else {
-                                completion(data, nil)
+                                completion(returnDic, nil)
                             }
                         } else {
                             completion(nil, .unknow)
@@ -123,28 +153,52 @@ public final class DCCJNetwork {
     private func getRequest(type: HTTPMethod, initURL: URL, httpBody: Dictionary<String, Any>? = nil, isSign: Bool = false) -> URLRequest? {
         guard let encrypt = DCCJNetwork.shared.encryptF else { return nil }
         var request = URLRequest(url: initURL)
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpMethod = type == .GET ? "GET" : "POST"
-        if let paramters = httpBody,
-            let httpBodyData = try? JSONSerialization.data(withJSONObject: paramters, options: []) {
-            request.httpBody = httpBodyData
-            
-            // 判断是否需要签名
-            if paramters.count > 0 && isSign {
-                let pathURL = initURL
-                let pathStr = pathURL.query
-                
-                let paramStr = self.calSignStr(paramters)
-                guard let encodeStr = paramStr.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
-                
-                var totalStr = encodeStr
-                if let pathStr = pathStr {
-                    totalStr = "\(String(describing: pathStr))&\(encodeStr)"
-                }
-                let signMd5  = encrypt(totalStr)
-                request.addValue(signMd5, forHTTPHeaderField: "Signature")
+        /*Add custom header fields*/
+        if let headerDatas = self.dataSource?.customHttpHeaders() {
+            for (key, value) in headerDatas where !key.isEmpty && !value.isEmpty {
+                request.addValue(value, forHTTPHeaderField: key)
             }
         }
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpMethod = type == .GET ? "GET" : "POST"
+        if type == .GET {
+            
+            if var urlComponents = URLComponents(url: initURL, resolvingAgainstBaseURL: false),
+                let httpBody = httpBody,
+                !httpBody.isEmpty {
+                
+                urlComponents.queryItems = [URLQueryItem]()
+                
+                for (key, value) in httpBody {
+                    let queryItem = URLQueryItem(name: key, value: "\(value)".addingPercentEncoding(withAllowedCharacters: .urlHostAllowed))
+                    urlComponents.queryItems?.append(queryItem)
+                }
+                request.url = urlComponents.url
+            }
+            
+        } else if type == .POST {
+            if let paramters = httpBody,
+                let httpBodyData = try? JSONSerialization.data(withJSONObject: paramters, options: []) {
+                request.httpBody = httpBodyData
+                
+                // 判断是否需要签名
+                if paramters.count > 0 && isSign {
+                    let pathURL = initURL
+                    let pathStr = pathURL.query
+                    
+                    let paramStr = self.calSignStr(paramters)
+                    guard let encodeStr = paramStr.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
+                    
+                    var totalStr = encodeStr
+                    if let pathStr = pathStr {
+                        totalStr = "\(String(describing: pathStr))&\(encodeStr)"
+                    }
+                    let signMd5  = encrypt(totalStr)
+                    request.addValue(signMd5, forHTTPHeaderField: "Signature")
+                }
+            }
+        }
+      
 
         return request
     }
