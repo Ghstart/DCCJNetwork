@@ -79,11 +79,11 @@ public protocol Client {
     func requestBy<T: Request>(_ r: T, completion: @escaping ([String: Any]?, DataManagerError?) -> Void)
 }
 
-protocol DCCJNetworkDelegate: class {
+public protocol DCCJNetworkDelegate: class {
     func errorCodeEqualTo201()
 }
 
-protocol DCCJNetworkDataSource: class {
+public protocol DCCJNetworkDataSource: class {
     func customHttpHeaders() -> Dictionary<String, String>
 }
 
