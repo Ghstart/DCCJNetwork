@@ -88,7 +88,7 @@ public protocol DCCJNetworkDataSource: class {
 }
 
 public final class DCCJNetwork: NSObject {
-   
+    
     public static let shared = DCCJNetwork()
     private var urlSession: URLSession  = URLSession.shared
     
@@ -96,8 +96,8 @@ public final class DCCJNetwork: NSObject {
     private var LOGINKEY: String        = ""
     private var encryptF: ((String) -> String)? = nil
     
-    weak var delegate: DCCJNetworkDelegate?
-    weak var dataSource: DCCJNetworkDataSource?
+    public weak var delegate: DCCJNetworkDelegate?
+    public weak var dataSource: DCCJNetworkDataSource?
     
     private override init() {}
     
@@ -106,7 +106,7 @@ public final class DCCJNetwork: NSObject {
         DCCJNetwork.shared.LOGINKEY = logKey
         DCCJNetwork.shared.encryptF = encryptMethod
     }
- 
+    
     public func requestBy<T: Request>(_ r: T, completion: @escaping ([String: Any]?, DataManagerError?) -> Void) {
         var url: URL
         if r.path.hasPrefix("http") || r.path.hasPrefix("https") {
@@ -145,10 +145,10 @@ public final class DCCJNetwork: NSObject {
             } else {
                 completion(nil, .unknow)
             }
-        }.resume()
+            }.resume()
     }
- 
-
+    
+    
     // MARK: -- 生成Request
     private func getRequest(type: HTTPMethod, initURL: URL, httpBody: Dictionary<String, Any>? = nil, isSign: Bool = false) -> URLRequest? {
         guard let encrypt = DCCJNetwork.shared.encryptF else { return nil }
@@ -198,8 +198,8 @@ public final class DCCJNetwork: NSObject {
                 }
             }
         }
-      
-
+        
+        
         return request
     }
     
@@ -227,7 +227,8 @@ public final class DCCJNetwork: NSObject {
         kvAll.append(DCCJNetwork.shared.LOGINKEY)
         
         return kvAll
-    } 
+    }
 }
+
 
 
