@@ -69,13 +69,19 @@ public enum HTTPMethod {
 }
 
 public protocol Request {
+    var host: String { get }
     var path: String { get }
     var method: HTTPMethod { get }
     var paramters: [String: Any] { get }
 }
 
+extension Request {
+    var host: String {
+        return DCCJNetwork.shared.hostMaps[.production] ?? ""
+    }
+}
+
 public protocol Client {
-    var host: String { get }
     func requestBy<T: Request>(_ r: T, completion: @escaping ([String: Any]?, DataManagerError?) -> Void)
 }
 
@@ -87,12 +93,21 @@ public protocol DCCJNetworkDataSource: class {
     func customHttpHeaders() -> Dictionary<String, String>
 }
 
-public final class DCCJNetwork: NSObject {
+@objc public enum NetworkEnvironment: Int {
+    case qa = 0
+    case cashier_staging
+    case cashier_production
+    case production
+    case staging
+}
+
+public final class DCCJNetwork: NSObject, Client {
     
     public static let shared = DCCJNetwork()
     private var urlSession: URLSession  = URLSession.shared
     
-    private var host: String            = ""
+    public var hostMaps: [NetworkEnvironment: String] = [:]
+    
     private var LOGINKEY: String        = ""
     private var encryptF: ((String) -> String)? = nil
     
@@ -101,8 +116,12 @@ public final class DCCJNetwork: NSObject {
     
     private override init() {}
     
-    public func config(host: String, logKey: String, encryptMethod: ((String) -> String)?) {
-        DCCJNetwork.shared.host     = host
+    public func config(hostMaps: [Int: String], logKey: String, encryptMethod: ((String) -> String)?) {
+        if (!DCCJNetwork.shared.hostMaps.isEmpty || !DCCJNetwork.shared.LOGINKEY.isEmpty || DCCJNetwork.shared.encryptF != nil) {
+            fatalError("Can not be modify values!!")
+        }
+        
+        DCCJNetwork.shared.hostMaps  = Dictionary(uniqueKeysWithValues: hostMaps.map { key, value in (NetworkEnvironment(rawValue: key)!, value)})
         DCCJNetwork.shared.LOGINKEY = logKey
         DCCJNetwork.shared.encryptF = encryptMethod
     }
@@ -111,8 +130,8 @@ public final class DCCJNetwork: NSObject {
         var url: URL
         if r.path.hasPrefix("http") || r.path.hasPrefix("https") {
             url = URL(string: r.path)!
-        } else if (!r.path.hasPrefix("http") && !r.path.hasPrefix("https") && !host.isEmpty) {
-            url = URL(string: host.appending(r.path))!
+        } else if (!r.path.hasPrefix("http") && !r.path.hasPrefix("https") && !r.host.isEmpty) {
+            url = URL(string: r.host.appending(r.path))!
         } else {
             fatalError("unknow host or path!!!")
         }
@@ -125,12 +144,11 @@ public final class DCCJNetwork: NSObject {
                 if response.statusCode == 200 {
                     do {
                         if let returnDic = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                            if let message = returnDic["resultMessage"] as? String,
-                                let code = returnDic["resultCode"] as? Int,
-                                code == 201 {
+                            if self.isErrorCodeEqual201(returnDic).is201 {
                                 if let callbackErrorCode201 = self.delegate?.errorCodeEqualTo201 { callbackErrorCode201() }
-                                completion(nil, .customError(message: message, errCode: -9999))
+                                completion(nil, .customError(message: self.isErrorCodeEqual201(returnDic).errMsg, errCode: -9999))
                             } else {
+                                print(returnDic)
                                 completion(returnDic, nil)
                             }
                         } else {
@@ -146,6 +164,19 @@ public final class DCCJNetwork: NSObject {
                 completion(nil, .unknow)
             }
             }.resume()
+    }
+    
+    private func isErrorCodeEqual201(_ d: [String: Any]) -> (is201: Bool, errMsg: String) {
+        if let m = d["resultMessage"] as? String,
+            let code = d["resultCode"] as? String,
+            code == "201" {
+            return (is201: true, errMsg: m)
+        } else if let m = d["message"] as? String,
+            let code = d["code"] as? String,
+            code == "201" {
+            return (is201: true, errMsg: m)
+        }
+        return (is201: false, errMsg: "")
     }
     
     
@@ -229,6 +260,7 @@ public final class DCCJNetwork: NSObject {
         return kvAll
     }
 }
+
 
 
 
