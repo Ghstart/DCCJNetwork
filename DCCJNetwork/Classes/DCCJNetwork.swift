@@ -82,7 +82,7 @@ extension Request {
 }
 
 public protocol Client {
-    func requestBy<T: Request>(_ r: T, completion: @escaping ([String: Any]?, DataManagerError?) -> Void)
+    func requestBy<C: Codable, T: Request>(_ r: T, completion: @escaping (C?, DataManagerError?) -> Void)
 }
 
 public protocol DCCJNetworkDelegate: class {
@@ -102,7 +102,6 @@ public protocol DCCJNetworkDataSource: class {
 }
 
 public final class DCCJNetwork: NSObject, Client {
-    
     public static let shared = DCCJNetwork()
     private var urlSession: URLSession  = URLSession.shared
     
@@ -126,7 +125,7 @@ public final class DCCJNetwork: NSObject, Client {
         DCCJNetwork.shared.encryptF = encryptMethod
     }
     
-    public func requestBy<T: Request>(_ r: T, completion: @escaping ([String: Any]?, DataManagerError?) -> Void) {
+    public func requestBy<C, T>(_ r: T, completion: @escaping (C?, DataManagerError?) -> Void) where C : Decodable, C : Encodable, T : Request {
         var url: URL
         if r.path.hasPrefix("http") || r.path.hasPrefix("https") {
             url = URL(string: r.path)!
@@ -148,8 +147,8 @@ public final class DCCJNetwork: NSObject, Client {
                                 if let callbackErrorCode201 = self.delegate?.errorCodeEqualTo201 { callbackErrorCode201() }
                                 completion(nil, .customError(message: self.isErrorCodeEqual201(returnDic).errMsg, errCode: -9999))
                             } else {
-                                print(returnDic)
-                                completion(returnDic, nil)
+                                let json = try JSONDecoder().decode(C.self, from: data)
+                                completion(json, nil)
                             }
                         } else {
                             completion(nil, .unknow)
