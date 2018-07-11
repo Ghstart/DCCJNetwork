@@ -82,7 +82,7 @@ extension Request {
 }
 
 public protocol Client {
-    func requestBy<C: Codable, T: Request>(_ r: T, completion: @escaping (C?, DataManagerError?) -> Void)
+    func requestBy<C: Codable & DCCJResponseCodeDataSource, T: Request>(_ r: T, completion: @escaping (C?, DataManagerError?) -> Void)
 }
 
 public protocol DCCJNetworkDelegate: class {
@@ -91,6 +91,16 @@ public protocol DCCJNetworkDelegate: class {
 
 public protocol DCCJNetworkDataSource: class {
     func customHttpHeaders() -> Dictionary<String, String>
+}
+
+public protocol DCCJResponseCodeDataSource: class {
+    var dccjCode: Int { get }
+    var dccjCodeString: String { get }
+}
+
+extension DCCJResponseCodeDataSource {
+    public var dccjCode: Int { return 0 }
+    public var dccjCodeString: String { return "" }
 }
 
 @objc public enum NetworkEnvironment: Int {
@@ -125,7 +135,7 @@ public final class DCCJNetwork: NSObject, Client {
         DCCJNetwork.shared.encryptF = encryptMethod
     }
     
-    public func requestBy<C, T>(_ r: T, completion: @escaping (C?, DataManagerError?) -> Void) where C : Decodable, C : Encodable, T : Request {
+    public func requestBy<C, T>(_ r: T, completion: @escaping (C?, DataManagerError?) -> Void) where C : Decodable, C : Encodable, C : DCCJResponseCodeDataSource, T : Request {
         var url: URL
         if r.path.hasPrefix("http") || r.path.hasPrefix("https") {
             url = URL(string: r.path)!
@@ -143,6 +153,7 @@ public final class DCCJNetwork: NSObject, Client {
                 if response.statusCode == 200 {
                     do {
                         if let returnDic = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                            print(returnDic)
                             if self.isErrorCodeEqual201(returnDic).is201 {
                                 if let callbackErrorCode201 = self.delegate?.errorCodeEqualTo201 { callbackErrorCode201() }
                                 completion(nil, .customError(message: self.isErrorCodeEqual201(returnDic).errMsg, errCode: -9999))
@@ -153,7 +164,8 @@ public final class DCCJNetwork: NSObject, Client {
                         } else {
                             completion(nil, .unknow)
                         }
-                    } catch {
+                    } catch(let e) {
+                        print(e)
                         completion(nil, .invalidResponse)
                     }
                 } else {
@@ -259,7 +271,3 @@ public final class DCCJNetwork: NSObject, Client {
         return kvAll
     }
 }
-
-
-
-

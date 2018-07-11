@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'DCCJNetwork'
-  s.version          = '0.2.4'
+  s.version          = '0.2.5it'
   s.summary          = 'This is a lightweight network framework.'
 
 # This description is used to generate tags and improve search results.
