@@ -9,10 +9,10 @@
 import Foundation
 
 public enum DataManagerError: Error {
-    case failedRequest                  // 请求失败
-    case invalidResponse                // 响应失败
-    case unknow                         // 未知错误
-    case customError(message: String, errCode: Int)   // 自定义错误
+    case failedRequest                                  // 请求失败
+    case invalidResponse                                // 响应失败
+    case unknow                                         // 未知错误
+    case customError(message: String, errCode: Int)     // 自定义错误
     
     public var errorMessage: String {
         switch self {
@@ -75,14 +75,19 @@ public protocol Request {
     var paramters: [String: Any] { get }
 }
 
-extension Request {
+public extension Request {
     var host: String {
         return DCCJNetwork.shared.hostMaps[.production] ?? ""
     }
 }
 
+public enum Result<Value, Error: Swift.Error> {
+    case success(Value)
+    case failure(Error)
+}
+
 public protocol Client {
-    func requestBy<C: Codable & DCCJResponseCodeDataSource, T: Request>(_ r: T, completion: @escaping (C?, DataManagerError?) -> Void)
+    func requestBy<C: Codable, T: Request>(_ r: T, completion: @escaping (Result<C, DataManagerError>) -> Void)
 }
 
 public protocol DCCJNetworkDelegate: class {
@@ -91,16 +96,6 @@ public protocol DCCJNetworkDelegate: class {
 
 public protocol DCCJNetworkDataSource: class {
     func customHttpHeaders() -> Dictionary<String, String>
-}
-
-public protocol DCCJResponseCodeDataSource: class {
-    var dccjCode: Int { get }
-    var dccjCodeString: String { get }
-}
-
-extension DCCJResponseCodeDataSource {
-    public var dccjCode: Int { return 0 }
-    public var dccjCodeString: String { return "" }
 }
 
 @objc public enum NetworkEnvironment: Int {
@@ -112,6 +107,7 @@ extension DCCJResponseCodeDataSource {
 }
 
 public final class DCCJNetwork: NSObject, Client {
+ 
     public static let shared = DCCJNetwork()
     private var urlSession: URLSession  = URLSession.shared
     
@@ -135,7 +131,7 @@ public final class DCCJNetwork: NSObject, Client {
         DCCJNetwork.shared.encryptF = encryptMethod
     }
     
-    public func requestBy<C, T>(_ r: T, completion: @escaping (C?, DataManagerError?) -> Void) where C : Decodable, C : Encodable, C : DCCJResponseCodeDataSource, T : Request {
+    public func requestBy<C, T>(_ r: T, completion: @escaping (Result<C, DataManagerError>) -> Void) where C : Decodable, C : Encodable, T : Request {
         var url: URL
         if r.path.hasPrefix("http") || r.path.hasPrefix("https") {
             url = URL(string: r.path)!
@@ -145,10 +141,10 @@ public final class DCCJNetwork: NSObject, Client {
             fatalError("unknow host or path!!!")
         }
         guard let request = getRequest(type: r.method, initURL: url, httpBody: r.paramters, isSign: true) else { return }
-        
+
         self.urlSession.dataTask(with: request) { (data, response, error) in
-            if let _ = error {
-                completion(nil, .failedRequest)
+            if let e = error {
+                completion(.failure(.customError(message: e.localizedDescription, errCode: (e as NSError).code)))
             } else if let data = data,  let response = response as? HTTPURLResponse {
                 if response.statusCode == 200 {
                     do {
@@ -156,25 +152,25 @@ public final class DCCJNetwork: NSObject, Client {
                             print(returnDic)
                             if self.isErrorCodeEqual201(returnDic).is201 {
                                 if let callbackErrorCode201 = self.delegate?.errorCodeEqualTo201 { callbackErrorCode201() }
-                                completion(nil, .customError(message: self.isErrorCodeEqual201(returnDic).errMsg, errCode: -9999))
+                                completion(.failure(.customError(message: self.isErrorCodeEqual201(returnDic).errMsg, errCode: -9999)))
                             } else {
                                 let json = try JSONDecoder().decode(C.self, from: data)
-                                completion(json, nil)
+                                completion(.success(json))
                             }
                         } else {
-                            completion(nil, .unknow)
+                            completion(.failure(.unknow))
                         }
                     } catch(let e) {
                         print(e)
-                        completion(nil, .invalidResponse)
+                        completion(.failure(.invalidResponse))
                     }
                 } else {
-                    completion(nil, .failedRequest)
+                    completion(.failure(.failedRequest))
                 }
             } else {
-                completion(nil, .unknow)
+                completion(.failure(.unknow))
             }
-            }.resume()
+        }.resume()
     }
     
     private func isErrorCodeEqual201(_ d: [String: Any]) -> (is201: Bool, errMsg: String) {

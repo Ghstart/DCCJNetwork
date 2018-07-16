@@ -15,16 +15,32 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         
         // config host、logkey、encrypt function
-        DCCJNetwork.shared.config(host: "https://www.host.com/", logKey: "You-Private-Key") { (encrypt) -> String in
-            // encrypt
-            return ""
+        // config this at Appdelegate didFinishedLaunch method
+        DCCJNetwork.shared.config(hostMaps: [NetworkEnvironment.qa.rawValue: "http://qa",
+                                             NetworkEnvironment.cashier_production.rawValue: "http://cashier_prodution",
+                                             NetworkEnvironment.cashier_staging.rawValue: "http://cashier_staging"],
+                                  logKey: "logKey") { (m) -> String in
+                                    return "\(m)+signed.."
         }
         
-
+        
         // send request
-        DCCJNetwork.shared.requestBy(BankCardsRequest.bankLists(accessToken: "token")) { (data, error) in
-            print(data ?? "no data")
-            print(error ?? "no error")
+        DCCJNetwork.shared.requestBy(BankCardsRequest.bankLists(accessToken: "token")) { (result: Result<BankCardsResponse, DataManagerError>) in
+            switch result {
+            case .success(let bankCardsResponse):
+                print("success\(bankCardsResponse)")
+            case .failure(let error):
+                switch error {
+                case .failedRequest:
+                    print("failedRequest...")
+                case .invalidResponse:
+                    print("invalidResponse")
+                case .unknow:
+                    print("unknoe")
+                case .customError(let message, _):
+                    print(message)
+                }
+            }
         }
     }
 
@@ -39,6 +55,7 @@ public enum BankCardsRequest {
 }
 
 extension BankCardsRequest: Request {
+    
     public var method: HTTPMethod { return .POST }
     
     public var paramters: [String : Any] {
@@ -66,4 +83,8 @@ extension BankCardsRequest: Request {
             return "cht=app.Cashier.checkBankCardValidity"
         }
     }
+}
+
+struct BankCardsResponse: Codable {
+    
 }
