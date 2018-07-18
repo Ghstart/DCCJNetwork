@@ -98,7 +98,7 @@ public protocol DCCJNetworkDataSource: class {
     func customHttpHeaders() -> Dictionary<String, String>
 }
 
-@objc public enum NetworkEnvironment: Int {
+public enum NetworkEnvironment: Int {
     case qa = 0
     case cashier_staging
     case cashier_production
@@ -106,7 +106,7 @@ public protocol DCCJNetworkDataSource: class {
     case staging
 }
 
-public final class DCCJNetwork: NSObject, Client {
+public final class DCCJNetwork: Client {
  
     public static let shared = DCCJNetwork()
     private var urlSession: URLSession  = URLSession.shared
@@ -114,19 +114,19 @@ public final class DCCJNetwork: NSObject, Client {
     public var hostMaps: [NetworkEnvironment: String] = [:]
     
     private var LOGINKEY: String        = ""
-    private var encryptF: ((String) -> String)? = nil
+    private var encryptF: (String) -> String = { $0 }
     
     public weak var delegate: DCCJNetworkDelegate?
     public weak var dataSource: DCCJNetworkDataSource?
     
-    private override init() {}
+    private init() {}
     
-    public func config(hostMaps: [Int: String], logKey: String, encryptMethod: ((String) -> String)?) {
-        if (!DCCJNetwork.shared.hostMaps.isEmpty || !DCCJNetwork.shared.LOGINKEY.isEmpty || DCCJNetwork.shared.encryptF != nil) {
+    public func config(hostMaps: [NetworkEnvironment: String], logKey: String, encryptMethod: @escaping (String) -> String) {
+        if (!DCCJNetwork.shared.hostMaps.isEmpty || !DCCJNetwork.shared.LOGINKEY.isEmpty) {
             fatalError("Can not be modify values!!")
         }
-        
-        DCCJNetwork.shared.hostMaps  = Dictionary(uniqueKeysWithValues: hostMaps.map { key, value in (NetworkEnvironment(rawValue: key)!, value)})
+
+        DCCJNetwork.shared.hostMaps = hostMaps
         DCCJNetwork.shared.LOGINKEY = logKey
         DCCJNetwork.shared.encryptF = encryptMethod
     }
@@ -189,7 +189,6 @@ public final class DCCJNetwork: NSObject, Client {
     
     // MARK: -- 生成Request
     private func getRequest(type: HTTPMethod, initURL: URL, httpBody: Dictionary<String, Any>? = nil, isSign: Bool = false) -> URLRequest? {
-        guard let encrypt = DCCJNetwork.shared.encryptF else { return nil }
         var request = URLRequest(url: initURL)
         /*Add custom header fields*/
         if let headerDatas = self.dataSource?.customHttpHeaders() {
@@ -231,7 +230,7 @@ public final class DCCJNetwork: NSObject, Client {
                     if let pathStr = pathStr {
                         totalStr = "\(String(describing: pathStr))&\(encodeStr)"
                     }
-                    let signMd5  = encrypt(totalStr)
+                    let signMd5  = DCCJNetwork.shared.encryptF(totalStr)
                     request.addValue(signMd5, forHTTPHeaderField: "Signature")
                 }
             }

@@ -16,9 +16,9 @@ class ViewController: UIViewController {
         
         // config host、logkey、encrypt function
         // config this at Appdelegate didFinishedLaunch method
-        DCCJNetwork.shared.config(hostMaps: [NetworkEnvironment.qa.rawValue: "http://qa",
-                                             NetworkEnvironment.cashier_production.rawValue: "http://cashier_prodution",
-                                             NetworkEnvironment.cashier_staging.rawValue: "http://cashier_staging"],
+        DCCJNetwork.shared.config(hostMaps: [NetworkEnvironment.qa: "http://qa",
+                                             NetworkEnvironment.cashier_production: "http://cashier_prodution",
+                                             NetworkEnvironment.cashier_staging: "http://cashier_staging"],
                                   logKey: "logKey") { (m) -> String in
                                     return "\(m)+signed.."
         }
