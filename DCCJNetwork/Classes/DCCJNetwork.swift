@@ -88,6 +88,7 @@ public enum Result<Value, Error: Swift.Error> {
 
 public protocol Client {
     func requestBy<C: Codable, T: Request>(_ r: T, completion: @escaping (Result<C, DataManagerError>) -> Void)
+    func requestDataBy<T: Request>(_ r: T, completion: @escaping (Result<Data, DataManagerError>) -> Void)
 }
 
 public protocol DCCJNetworkDelegate: class {
@@ -107,7 +108,7 @@ public enum NetworkEnvironment: Int {
 }
 
 public final class DCCJNetwork: Client {
- 
+    
     public static let shared = DCCJNetwork()
     private var urlSession: URLSession  = URLSession.shared
     
@@ -171,6 +172,47 @@ public final class DCCJNetwork: Client {
                 completion(.failure(.unknow))
             }
         }.resume()
+    }
+    
+    public func requestDataBy<T>(_ r: T, completion: @escaping (Result<Data, DataManagerError>) -> Void) where T : Request {
+        var url: URL
+        if r.path.hasPrefix("http") || r.path.hasPrefix("https") {
+            url = URL(string: r.path)!
+        } else if (!r.path.hasPrefix("http") && !r.path.hasPrefix("https") && !r.host.isEmpty) {
+            url = URL(string: r.host.appending(r.path))!
+        } else {
+            fatalError("unknow host or path!!!")
+        }
+        guard let request = getRequest(type: r.method, initURL: url, httpBody: r.paramters, isSign: true) else { return }
+        
+        self.urlSession.dataTask(with: request) { (data, response, error) in
+            if let e = error {
+                completion(.failure(.customError(message: e.localizedDescription, errCode: (e as NSError).code)))
+            } else if let data = data,  let response = response as? HTTPURLResponse {
+                if response.statusCode == 200 {
+                    do {
+                        if let returnDic = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                            print(returnDic)
+                            if self.isErrorCodeEqual201(returnDic).is201 {
+                                if let callbackErrorCode201 = self.delegate?.errorCodeEqualTo201 { callbackErrorCode201() }
+                                completion(.failure(.customError(message: self.isErrorCodeEqual201(returnDic).errMsg, errCode: -9999)))
+                            } else {
+                                completion(.success(data))
+                            }
+                        } else {
+                            completion(.failure(.unknow))
+                        }
+                    } catch(let e) {
+                        print(e)
+                        completion(.failure(.invalidResponse))
+                    }
+                } else {
+                    completion(.failure(.failedRequest))
+                }
+            } else {
+                completion(.failure(.unknow))
+            }
+            }.resume()
     }
     
     private func isErrorCodeEqual201(_ d: [String: Any]) -> (is201: Bool, errMsg: String) {
