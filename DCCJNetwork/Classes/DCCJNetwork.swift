@@ -196,8 +196,10 @@ public final class DCCJNetwork: Client {
                             if self.isErrorCodeEqual201(returnDic).is201 {
                                 if let callbackErrorCode201 = self.delegate?.errorCodeEqualTo201 { callbackErrorCode201() }
                                 completion(.failure(.customError(message: self.isErrorCodeEqual201(returnDic).errMsg, errCode: -9999)))
-                            } else {
+                            } else if self.isSuccess(returnDic) {
                                 completion(.success(data))
+                            } else {
+                                completion(.failure(.unknow))
                             }
                         } else {
                             completion(.failure(.unknow))
@@ -213,6 +215,13 @@ public final class DCCJNetwork: Client {
                 completion(.failure(.unknow))
             }
             }.resume()
+    }
+    
+    private func isSuccess(_ d: [String: Any]) -> Bool {
+        if let b = d["success"] as? Bool, b == true {
+            return true
+        }
+        return false;
     }
     
     private func isErrorCodeEqual201(_ d: [String: Any]) -> (is201: Bool, errMsg: String) {

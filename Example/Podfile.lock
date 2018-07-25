@@ -1,5 +1,5 @@
 PODS:
-  - DCCJNetwork (0.2.1)
+  - DCCJNetwork (0.2.9)
 
 DEPENDENCIES:
   - DCCJNetwork (from `../`)
@@ -9,7 +9,7 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  DCCJNetwork: 2852860566e8fc3261abd42e1d45ef77e0992c26
+  DCCJNetwork: c3b59718b819356bb214c954c7bac1c5bfa63670
 
 PODFILE CHECKSUM: 4e05ace3a85f71741cd50b929059cbfffaa49cfc
 
