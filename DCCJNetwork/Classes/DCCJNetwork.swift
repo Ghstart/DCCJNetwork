@@ -105,12 +105,17 @@ public enum NetworkEnvironment: Int {
     case cashier_production
     case production
     case staging
+    case message_production
 }
 
 public final class DCCJNetwork: Client {
     
     public static let shared = DCCJNetwork()
-    private var urlSession: URLSession  = URLSession.shared
+    private var urlSession: URLSession  = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 30
+        return URLSession(configuration: config)
+    }()
     
     public var hostMaps: [NetworkEnvironment: String] = [:]
     
