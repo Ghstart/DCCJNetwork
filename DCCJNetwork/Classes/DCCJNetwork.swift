@@ -154,9 +154,11 @@ public final class DCCJNetwork: Client {
                             if self.isErrorCodeEqual201(returnDic).is201 {
                                 if let callbackErrorCode201 = self.delegate?.errorCodeEqualTo201 { callbackErrorCode201() }
                                 completion(.failure(.customError(message: self.isErrorCodeEqual201(returnDic).errMsg, errCode: -9999)))
-                            } else {
+                            } else if self.isSuccess(returnDic) {
                                 let json = try JSONDecoder().decode(C.self, from: data)
                                 completion(.success(json))
+                            } else {
+                                completion(.failure(.unknow))
                             }
                         } else {
                             completion(.failure(.unknow))
