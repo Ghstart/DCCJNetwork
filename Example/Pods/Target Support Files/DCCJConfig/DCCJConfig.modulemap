@@ -1,0 +1,6 @@
+framework module DCCJConfig {
+  umbrella header "DCCJConfig-umbrella.h"
+
+  export *
+  module * { export * }
+}

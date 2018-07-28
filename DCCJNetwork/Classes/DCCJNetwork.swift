@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import DCCJConfig
 
 public enum DataManagerError: Error {
     case failedRequest                                  // 请求失败
@@ -79,11 +80,6 @@ public extension Request {
     var host: String {
         return DCCJNetwork.shared.hostMaps[.production] ?? ""
     }
-}
-
-public enum Result<Value, Error: Swift.Error> {
-    case success(Value)
-    case failure(Error)
 }
 
 public protocol Client {

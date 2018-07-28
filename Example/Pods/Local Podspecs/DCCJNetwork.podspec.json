@@ -1,6 +1,6 @@
 {
   "name": "DCCJNetwork",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "summary": "This is a lightweight network framework.",
   "description": "This is a lightweight network framework created by DCCJ.",
   "homepage": "https://github.com/Ghstart/DCCJNetwork",
@@ -13,10 +13,15 @@
   },
   "source": {
     "git": "https://github.com/Ghstart/DCCJNetwork.git",
-    "tag": "0.3.1"
+    "tag": "0.3.2"
   },
   "platforms": {
     "ios": "9.0"
   },
-  "source_files": "DCCJNetwork/Classes/**/*"
+  "source_files": "DCCJNetwork/Classes/**/*",
+  "dependencies": {
+    "DCCJConfig": [
+      "~> 0.1.0"
+    ]
+  }
 }
