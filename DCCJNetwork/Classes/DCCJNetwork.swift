@@ -83,8 +83,8 @@ public extension Request {
 }
 
 public protocol Client {
-    func requestBy<C: Codable, T: Request>(_ r: T, completion: @escaping (Result<C, DataManagerError>) -> Void)
-    func requestDataBy<T: Request>(_ r: T, completion: @escaping (Result<Data, DataManagerError>) -> Void)
+    func requestBy<C: Codable, T: Request>(_ r: T, completion: @escaping (Result<C, DataManagerError>) -> Void) -> URLSessionDataTask?
+    func requestDataBy<T: Request>(_ r: T, completion: @escaping (Result<Data, DataManagerError>) -> Void) -> URLSessionDataTask?
 }
 
 public protocol DCCJNetworkDelegate: class {
@@ -133,7 +133,7 @@ public final class DCCJNetwork: Client {
         DCCJNetwork.shared.encryptF = encryptMethod
     }
     
-    public func requestBy<C, T>(_ r: T, completion: @escaping (Result<C, DataManagerError>) -> Void) where C : Decodable, C : Encodable, T : Request {
+    public func requestBy<C, T>(_ r: T, completion: @escaping (Result<C, DataManagerError>) -> Void) -> URLSessionDataTask? where C : Decodable, C : Encodable, T : Request {
         var url: URL
         if r.path.hasPrefix("http") || r.path.hasPrefix("https") {
             url = URL(string: r.path)!
@@ -142,9 +142,9 @@ public final class DCCJNetwork: Client {
         } else {
             fatalError("unknow host or path!!!")
         }
-        guard let request = getRequest(type: r.method, initURL: url, httpBody: r.paramters, isSign: true) else { return }
+        guard let request = getRequest(type: r.method, initURL: url, httpBody: r.paramters, isSign: true) else { return nil }
 
-        self.urlSession.dataTask(with: request) { (data, response, error) in
+        let sessionData = self.urlSession.dataTask(with: request) { (data, response, error) in
             if let e = error {
                 completion(.failure(.customError(message: e.localizedDescription, errCode: (e as NSError).code)))
             } else if let data = data,  let response = response as? HTTPURLResponse {
@@ -174,10 +174,12 @@ public final class DCCJNetwork: Client {
             } else {
                 completion(.failure(.unknow))
             }
-        }.resume()
+        }
+        sessionData.resume()
+        return sessionData
     }
     
-    public func requestDataBy<T>(_ r: T, completion: @escaping (Result<Data, DataManagerError>) -> Void) where T : Request {
+    public func requestDataBy<T>(_ r: T, completion: @escaping (Result<Data, DataManagerError>) -> Void) -> URLSessionDataTask? where T : Request {
         var url: URL
         if r.path.hasPrefix("http") || r.path.hasPrefix("https") {
             url = URL(string: r.path)!
@@ -186,9 +188,9 @@ public final class DCCJNetwork: Client {
         } else {
             fatalError("unknow host or path!!!")
         }
-        guard let request = getRequest(type: r.method, initURL: url, httpBody: r.paramters, isSign: true) else { return }
+        guard let request = getRequest(type: r.method, initURL: url, httpBody: r.paramters, isSign: true) else { return nil }
         
-        self.urlSession.dataTask(with: request) { (data, response, error) in
+        let sessionData = self.urlSession.dataTask(with: request) { (data, response, error) in
             if let e = error {
                 completion(.failure(.customError(message: e.localizedDescription, errCode: (e as NSError).code)))
             } else if let data = data,  let response = response as? HTTPURLResponse {
@@ -217,7 +219,9 @@ public final class DCCJNetwork: Client {
             } else {
                 completion(.failure(.unknow))
             }
-            }.resume()
+        }
+        sessionData.resume()
+        return sessionData
     }
     
     private func isSuccess(_ d: [String: Any]) -> Bool {
