@@ -1,7 +1,11 @@
 PODS:
-  - DCCJConfig (0.1.0)
-  - DCCJNetwork (0.3.2):
-    - DCCJConfig (~> 0.1.0)
+  - DCCJConfig (0.1.7):
+    - DCCJConfig/DataManagerError (= 0.1.7)
+    - DCCJConfig/Result (= 0.1.7)
+  - DCCJConfig/DataManagerError (0.1.7)
+  - DCCJConfig/Result (0.1.7)
+  - DCCJNetwork (0.3.5):
+    - DCCJConfig (~> 0.1.7)
 
 DEPENDENCIES:
   - DCCJNetwork (from `../`)
@@ -15,8 +19,8 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  DCCJConfig: f5406d0f7142f052fab836b329e2e147489999d2
-  DCCJNetwork: 28a427007abf9edcb1507e17ac734f8313cdc737
+  DCCJConfig: 75489bbacd3d721bf9a995c1081fc40f62295e14
+  DCCJNetwork: 9107d238dff72520e81b74ea772bfb6effeabeee
 
 PODFILE CHECKSUM: 4e05ace3a85f71741cd50b929059cbfffaa49cfc
 

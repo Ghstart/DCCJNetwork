@@ -9,61 +9,6 @@
 import Foundation
 import DCCJConfig
 
-public enum DataManagerError: Error {
-    case failedRequest                                  // 请求失败
-    case invalidResponse                                // 响应失败
-    case unknow                                         // 未知错误
-    case customError(message: String, errCode: Int)     // 自定义错误
-    
-    public var errorMessage: String {
-        switch self {
-        case .failedRequest:
-            return "请求失败"
-        case .invalidResponse:
-            return "响应失败"
-        case .unknow:
-            return "未知错误"
-        case .customError(let message, _):
-            return message
-        }
-    }
-    
-    public var errorCode: Int {
-        switch self {
-        case .failedRequest:
-            return -1024
-        case .invalidResponse:
-            return -1025
-        case .unknow:
-            return -1026
-        case .customError(_, let code):
-            return code
-        }
-    }
-    
-    public func error() -> NSError {
-        return NSError(domain: self.errorMessage, code: self.errorCode, userInfo: nil)
-    }
-}
-
-extension DataManagerError: Equatable {
-    public static func ==(lhs: DataManagerError, rhs: DataManagerError) -> Bool {
-        switch (lhs, rhs) {
-        case (.failedRequest, .failedRequest):
-            return true
-        case (.invalidResponse, .invalidResponse):
-            return true
-        case (.unknow, .unknow):
-            return true
-        case (.customError(let e), .customError(let s)) where e == s:
-            return true
-        default:
-            return false
-        }
-    }
-}
-
-
 public enum HTTPMethod {
     case GET
     case POST
@@ -83,8 +28,7 @@ public extension Request {
 }
 
 public protocol Client {
-    func requestBy<C: Codable, T: Request>(_ r: T, completion: @escaping (Result<C, DataManagerError>) -> Void) -> URLSessionDataTask?
-    func requestDataBy<T: Request>(_ r: T, completion: @escaping (Result<Data, DataManagerError>) -> Void) -> URLSessionDataTask?
+    func request<T: Request>(with r: T) -> (data: Future<Data>, task: URLSessionDataTask?)
 }
 
 public protocol DCCJNetworkDelegate: class {
@@ -133,7 +77,7 @@ public final class DCCJNetwork: Client {
         DCCJNetwork.shared.encryptF = encryptMethod
     }
     
-    public func requestBy<C, T>(_ r: T, completion: @escaping (Result<C, DataManagerError>) -> Void) -> URLSessionDataTask? where C : Decodable, C : Encodable, T : Request {
+    public func request<T>(with r: T) -> (data: Future<Data>, task: URLSessionDataTask?) where T : Request {
         var url: URL
         if r.path.hasPrefix("http") || r.path.hasPrefix("https") {
             url = URL(string: r.path)!
@@ -142,57 +86,17 @@ public final class DCCJNetwork: Client {
         } else {
             fatalError("unknow host or path!!!")
         }
-        guard let request = getRequest(type: r.method, initURL: url, httpBody: r.paramters, isSign: true) else { return nil }
-
-        let sessionData = self.urlSession.dataTask(with: request) { (data, response, error) in
-            if let e = error {
-                completion(.failure(.customError(message: e.localizedDescription, errCode: (e as NSError).code)))
-            } else if let data = data,  let response = response as? HTTPURLResponse {
-                if response.statusCode == 200 {
-                    do {
-                        if let returnDic = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                            print(returnDic)
-                            if self.isErrorCodeEqual201(returnDic).is201 {
-                                if let callbackErrorCode201 = self.delegate?.errorCodeEqualTo201 { callbackErrorCode201() }
-                                completion(.failure(.customError(message: self.isErrorCodeEqual201(returnDic).errMsg, errCode: -9999)))
-                            } else if self.isSuccess(returnDic) {
-                                let json = try JSONDecoder().decode(C.self, from: data)
-                                completion(.success(json))
-                            } else {
-                                completion(.failure(.unknow))
-                            }
-                        } else {
-                            completion(.failure(.unknow))
-                        }
-                    } catch(let e) {
-                        print(e)
-                        completion(.failure(.invalidResponse))
-                    }
-                } else {
-                    completion(.failure(.failedRequest))
-                }
-            } else {
-                completion(.failure(.unknow))
-            }
-        }
-        sessionData.resume()
-        return sessionData
-    }
-    
-    public func requestDataBy<T>(_ r: T, completion: @escaping (Result<Data, DataManagerError>) -> Void) -> URLSessionDataTask? where T : Request {
-        var url: URL
-        if r.path.hasPrefix("http") || r.path.hasPrefix("https") {
-            url = URL(string: r.path)!
-        } else if (!r.path.hasPrefix("http") && !r.path.hasPrefix("https") && !r.host.isEmpty) {
-            url = URL(string: r.host.appending(r.path))!
-        } else {
-            fatalError("unknow host or path!!!")
-        }
-        guard let request = getRequest(type: r.method, initURL: url, httpBody: r.paramters, isSign: true) else { return nil }
         
-        let sessionData = self.urlSession.dataTask(with: request) { (data, response, error) in
+        let promise = Promise<Data>()
+        
+        guard let request = getRequest(type: r.method, initURL: url, httpBody: r.paramters, isSign: true) else {
+            promise.reject(with: DataManagerError.failedRequest)
+            return (data: promise, task: nil)
+        }
+        
+        let task = self.urlSession.dataTask(with: request) { (data, response, error) in
             if let e = error {
-                completion(.failure(.customError(message: e.localizedDescription, errCode: (e as NSError).code)))
+                promise.reject(with: DataManagerError.customError(message: e.localizedDescription))
             } else if let data = data,  let response = response as? HTTPURLResponse {
                 if response.statusCode == 200 {
                     do {
@@ -200,28 +104,30 @@ public final class DCCJNetwork: Client {
                             print(returnDic)
                             if self.isErrorCodeEqual201(returnDic).is201 {
                                 if let callbackErrorCode201 = self.delegate?.errorCodeEqualTo201 { callbackErrorCode201() }
-                                completion(.failure(.customError(message: self.isErrorCodeEqual201(returnDic).errMsg, errCode: -9999)))
+                                promise.reject(with: DataManagerError.customError(message: self.isErrorCodeEqual201(returnDic).errMsg))
                             } else if self.isSuccess(returnDic) {
-                                completion(.success(data))
+                                promise.resolve(with: data)
                             } else {
-                                completion(.failure(.unknow))
+                                promise.reject(with: DataManagerError.unknow)
                             }
                         } else {
-                            completion(.failure(.unknow))
+                            promise.reject(with: DataManagerError.unknow)
                         }
                     } catch(let e) {
                         print(e)
-                        completion(.failure(.invalidResponse))
+                        promise.reject(with: DataManagerError.failedRequest)
                     }
                 } else {
-                    completion(.failure(.failedRequest))
+                    promise.reject(with: DataManagerError.failedRequest)
                 }
             } else {
-                completion(.failure(.unknow))
+                promise.reject(with: DataManagerError.unknow)
             }
         }
-        sessionData.resume()
-        return sessionData
+        
+        task.resume()
+        
+        return (data: promise, task: task)
     }
     
     private func isSuccess(_ d: [String: Any]) -> Bool {

@@ -24,25 +24,50 @@ class ViewController: UIViewController {
                                     return "\(m)+signed.."
         }
         
+        // Send request and return data
+        DCCJNetwork.shared.request(with: BankCardsRequest.bankLists(accessToken: "token")).data.observe { (result) in
         
-        // send request
-        DCCJNetwork.shared.requestBy(BankCardsRequest.bankLists(accessToken: "token")) { (result: Result<BankCardsResponse, DataManagerError>) in
             switch result {
-            case .success(let bankCardsResponse):
-                print("success\(bankCardsResponse)")
-            case .failure(let error):
+            case .success(let v):
+                print(v)
+            case .failure(let e):
+                let error = e as! DataManagerError
                 switch error {
+                case .customError(let message):
+                    print(message)
                 case .failedRequest:
-                    print("failedRequest...")
+                    print("failedRequest")
                 case .invalidResponse:
                     print("invalidResponse")
                 case .unknow:
-                    print("unknoe")
-                case .customError(let message, _):
-                    print(message)
+                    print("unknow")
                 }
             }
+            
         }
+        
+        // Send request and return model
+        DCCJNetwork.shared.request(with: BankCardsRequest.bankLists(accessToken: "token")).data.unboxed().observe { (result: Result<BankCardsResponse>) in
+            
+            switch result {
+            case .success(let v):
+                print(v)
+            case .failure(let e):
+                let error = e as! DataManagerError
+                switch error {
+                case .customError(let message):
+                    print(message)
+                case .failedRequest:
+                    print("failedRequest")
+                case .invalidResponse:
+                    print("invalidResponse")
+                case .unknow:
+                    print("unknow")
+                }
+            }
+            
+        }
+
     }
 
 }
