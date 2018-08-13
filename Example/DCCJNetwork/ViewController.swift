@@ -65,11 +65,8 @@ class ViewController: UIViewController {
                     print("unknow")
                 }
             }
-            
         }
-
     }
-
 }
 
 

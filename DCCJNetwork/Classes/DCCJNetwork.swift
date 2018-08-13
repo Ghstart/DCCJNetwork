@@ -8,6 +8,7 @@
 
 import Foundation
 import DCCJConfig
+import SwiftyBeaver
 
 public enum HTTPMethod {
     case GET
@@ -94,6 +95,10 @@ public final class DCCJNetwork: Client {
             return (data: promise, task: nil)
         }
         
+        SwiftyBeaver.debug("method:\(r.method)")
+        SwiftyBeaver.debug("url:\(url)")
+        SwiftyBeaver.info("paramters:\(r.paramters)")
+        
         let task = self.urlSession.dataTask(with: request) { (data, response, error) in
             if let e = error {
                 promise.reject(with: DataManagerError.customError(message: e.localizedDescription))
@@ -101,7 +106,7 @@ public final class DCCJNetwork: Client {
                 if response.statusCode == 200 {
                     do {
                         if let returnDic = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                            print(returnDic)
+                            SwiftyBeaver.debug(returnDic)
                             if self.isErrorCodeEqual201(returnDic).is201 {
                                 if let callbackErrorCode201 = self.delegate?.errorCodeEqualTo201 { callbackErrorCode201() }
                                 promise.reject(with: DataManagerError.customError(message: self.isErrorCodeEqual201(returnDic).errMsg))
@@ -114,7 +119,7 @@ public final class DCCJNetwork: Client {
                             promise.reject(with: DataManagerError.unknow)
                         }
                     } catch(let e) {
-                        print(e)
+                        SwiftyBeaver.error(e)
                         promise.reject(with: DataManagerError.failedRequest)
                     }
                 } else {
@@ -157,6 +162,7 @@ public final class DCCJNetwork: Client {
         /*Add custom header fields*/
         if let headerDatas = self.dataSource?.customHttpHeaders() {
             for (key, value) in headerDatas where !key.isEmpty && !value.isEmpty {
+                SwiftyBeaver.debug("\(key):\(value)")
                 request.addValue(value, forHTTPHeaderField: key)
             }
         }
