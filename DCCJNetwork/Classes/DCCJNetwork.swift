@@ -72,7 +72,7 @@ public final class DCCJNetwork: Client {
         if (!DCCJNetwork.shared.hostMaps.isEmpty || !DCCJNetwork.shared.LOGINKEY.isEmpty) {
             fatalError("Can not be modify values!!")
         }
-
+        
         DCCJNetwork.shared.hostMaps = hostMaps
         DCCJNetwork.shared.LOGINKEY = logKey
         DCCJNetwork.shared.encryptF = encryptMethod
@@ -112,6 +112,10 @@ public final class DCCJNetwork: Client {
                                 promise.reject(with: DataManagerError.customError(message: self.isErrorCodeEqual201(returnDic).errMsg))
                             } else if self.isSuccess(returnDic) {
                                 promise.resolve(with: data)
+                            } else if let errorMsg = returnDic["resultMessage"] as? String {
+                                promise.reject(with: DataManagerError.customError(message: errorMsg))
+                            } else if let errorMsg = returnDic["message"] as? String {
+                                promise.reject(with: DataManagerError.customError(message: errorMsg))
                             } else {
                                 promise.reject(with: DataManagerError.unknow)
                             }
