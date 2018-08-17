@@ -16,15 +16,15 @@ public enum HTTPMethod {
 }
 
 public protocol Request {
-    var host: String { get }
+    var host: NetworkEnvironment { get }
     var path: String { get }
     var method: HTTPMethod { get }
     var paramters: [String: Any] { get }
 }
 
 public extension Request {
-    var host: String {
-        return DCCJNetwork.shared.hostMaps[.production] ?? ""
+    var host: NetworkEnvironment {
+        return .production
     }
 }
 
@@ -51,7 +51,7 @@ public enum NetworkEnvironment: Int {
 
 public final class DCCJNetwork: Client {
     
-    public static let shared = DCCJNetwork()
+    //public static let shared = DCCJNetwork()
     private var urlSession: URLSession  = {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
@@ -66,24 +66,24 @@ public final class DCCJNetwork: Client {
     public weak var delegate: DCCJNetworkDelegate?
     public weak var dataSource: DCCJNetworkDataSource?
     
-    private init() {}
+    public init() {}
     
     public func config(hostMaps: [NetworkEnvironment: String], logKey: String, encryptMethod: @escaping (String) -> String) {
-        if (!DCCJNetwork.shared.hostMaps.isEmpty || !DCCJNetwork.shared.LOGINKEY.isEmpty) {
+        if (!self.hostMaps.isEmpty || !self.LOGINKEY.isEmpty) {
             fatalError("Can not be modify values!!")
         }
-        
-        DCCJNetwork.shared.hostMaps = hostMaps
-        DCCJNetwork.shared.LOGINKEY = logKey
-        DCCJNetwork.shared.encryptF = encryptMethod
+
+        self.hostMaps = hostMaps
+        self.LOGINKEY = logKey
+        self.encryptF = encryptMethod
     }
     
     public func request<T>(with r: T) -> (data: Future<Data>, task: URLSessionDataTask?) where T : Request {
         var url: URL
         if r.path.hasPrefix("http") || r.path.hasPrefix("https") {
             url = URL(string: r.path)!
-        } else if (!r.path.hasPrefix("http") && !r.path.hasPrefix("https") && !r.host.isEmpty) {
-            url = URL(string: r.host.appending(r.path))!
+        } else if (!r.path.hasPrefix("http") && !r.path.hasPrefix("https")), let connectHost = self.hostMaps[r.host] {
+            url = URL(string: connectHost.appending(r.path))!
         } else {
             fatalError("unknow host or path!!!")
         }
@@ -112,10 +112,6 @@ public final class DCCJNetwork: Client {
                                 promise.reject(with: DataManagerError.customError(message: self.isErrorCodeEqual201(returnDic).errMsg))
                             } else if self.isSuccess(returnDic) {
                                 promise.resolve(with: data)
-                            } else if let errorMsg = returnDic["resultMessage"] as? String {
-                                promise.reject(with: DataManagerError.customError(message: errorMsg))
-                            } else if let errorMsg = returnDic["message"] as? String {
-                                promise.reject(with: DataManagerError.customError(message: errorMsg))
                             } else {
                                 promise.reject(with: DataManagerError.unknow)
                             }
@@ -204,7 +200,7 @@ public final class DCCJNetwork: Client {
                     if let pathStr = pathStr {
                         totalStr = "\(String(describing: pathStr))&\(encodeStr)"
                     }
-                    let signMd5  = DCCJNetwork.shared.encryptF(totalStr)
+                    let signMd5  = self.encryptF(totalStr)
                     request.addValue(signMd5, forHTTPHeaderField: "Signature")
                 }
             }
@@ -235,7 +231,7 @@ public final class DCCJNetwork: Client {
             }
         }
         
-        kvAll.append(DCCJNetwork.shared.LOGINKEY)
+        kvAll.append(self.LOGINKEY)
         
         return kvAll
     }

@@ -17,7 +17,7 @@ class ViewController: UIViewController {
         
         // config host、logkey、encrypt function
         // config this at Appdelegate didFinishedLaunch method
-        DCCJNetwork.shared.config(hostMaps: [NetworkEnvironment.qa: "http://qa",
+        DCCJNetwork().config(hostMaps: [NetworkEnvironment.qa: "http://qa",
                                              NetworkEnvironment.cashier_production: "http://cashier_prodution",
                                              NetworkEnvironment.cashier_staging: "http://cashier_staging"],
                                   logKey: "logKey") { (m) -> String in
@@ -25,7 +25,7 @@ class ViewController: UIViewController {
         }
         
         // Send request and return data
-        DCCJNetwork.shared.request(with: BankCardsRequest.bankLists(accessToken: "token")).data.observe { (result) in
+        DCCJNetwork().request(with: BankCardsRequest.bankLists(accessToken: "token")).data.observe { (result) in
         
             switch result {
             case .success(let v):
@@ -47,7 +47,7 @@ class ViewController: UIViewController {
         }
         
         // Send request and return model
-        DCCJNetwork.shared.request(with: BankCardsRequest.bankLists(accessToken: "token")).data.unboxed().observe { (result: Result<BankCardsResponse>) in
+        DCCJNetwork().request(with: BankCardsRequest.bankLists(accessToken: "token")).data.unboxed().observe { (result: Result<BankCardsResponse>) in
             
             switch result {
             case .success(let v):

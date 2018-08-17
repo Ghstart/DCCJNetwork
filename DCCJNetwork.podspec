@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'DCCJNetwork'
-  s.version          = '0.3.8'
+  s.version          = '0.3.9'
   s.summary          = 'This is a lightweight network framework.'
 
 # This description is used to generate tags and improve search results.
@@ -38,6 +38,6 @@ Pod::Spec.new do |s|
 
   # s.public_header_files = 'Pod/Classes/**/*.h'
   # s.frameworks = 'UIKit', 'MapKit'
-  s.dependency 'DCCJConfig', '~> 0.1.8'
+  s.dependency 'DCCJConfig', '~> 0.2.0'
   s.dependency 'SwiftyBeaver'
 end

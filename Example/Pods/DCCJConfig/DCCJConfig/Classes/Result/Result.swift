@@ -16,6 +16,10 @@ public enum Result<Value> {
     case failure(Error)
 }
 
+public enum Results<Value, Error: Swift.Error> {
+    case success(Value)
+    case failure(Error)
+}
 
 /*
  ** Promise
