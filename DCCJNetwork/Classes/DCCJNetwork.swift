@@ -113,14 +113,22 @@ public final class DCCJNetwork: Client {
                             } else if self.isSuccess(returnDic) {
                                 promise.resolve(with: data)
                             } else {
-                                promise.reject(with: DataManagerError.unknow)
+                                if let message = returnDic["message"] as? String {
+                                    promise.reject(with: DataManagerError.customError(message: message))
+                                } else if let message = returnDic["resultMessage"] as? String {
+                                    promise.reject(with: DataManagerError.customError(message: message))
+                                } else if let message = returnDic["msg"] as? String {
+                                    promise.reject(with: DataManagerError.customError(message: message))
+                                } else {
+                                    promise.reject(with: DataManagerError.unknow)
+                                }
                             }
                         } else {
                             promise.reject(with: DataManagerError.unknow)
                         }
                     } catch(let e) {
                         SwiftyBeaver.error(e)
-                        promise.reject(with: DataManagerError.failedRequest)
+                        promise.reject(with: DataManagerError.systemError(e: e))
                     }
                 } else {
                     promise.reject(with: DataManagerError.failedRequest)

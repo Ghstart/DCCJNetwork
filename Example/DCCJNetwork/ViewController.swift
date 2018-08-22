@@ -41,6 +41,8 @@ class ViewController: UIViewController {
                     print("invalidResponse")
                 case .unknow:
                     print("unknow")
+                case .systemError(let e):
+                    print(e.localizedDescription)
                 }
             }
             
@@ -63,6 +65,8 @@ class ViewController: UIViewController {
                     print("invalidResponse")
                 case .unknow:
                     print("unknow")
+                case .systemError(let e):
+                    print(e.localizedDescription)
                 }
             }
         }

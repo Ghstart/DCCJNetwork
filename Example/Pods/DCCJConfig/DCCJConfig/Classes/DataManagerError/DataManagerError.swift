@@ -16,6 +16,7 @@ public enum DataManagerError: Error {
     case invalidResponse                                // 响应失败
     case unknow                                         // 未知错误
     case customError(message: String)                   // 自定义错误
+    case systemError(e: Error)                          // 系统错误
     
     public var errorMessage: String {
         switch self {
@@ -27,6 +28,8 @@ public enum DataManagerError: Error {
             return "未知错误"
         case .customError(let message):
             return message
+        case .systemError(let e):
+            return e.localizedDescription
         }
     }
 }
@@ -41,6 +44,8 @@ extension DataManagerError: Equatable {
         case (.unknow, .unknow):
             return true
         case (.customError(let e), .customError(let s)) where e == s:
+            return true
+        case (.systemError(let e), .systemError(let s)) where e.localizedDescription == s.localizedDescription:
             return true
         default:
             return false
