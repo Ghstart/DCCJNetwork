@@ -51,7 +51,6 @@ public enum NetworkEnvironment: Int {
 
 public final class DCCJNetwork: Client {
     
-    //public static let shared = DCCJNetwork()
     private var urlSession: URLSession  = {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
@@ -97,31 +96,23 @@ public final class DCCJNetwork: Client {
         
         SwiftyBeaver.debug("method:\(r.method)")
         SwiftyBeaver.debug("url:\(url)")
-        SwiftyBeaver.info("paramters:\(r.paramters)")
+        SwiftyBeaver.debug("paramters:\(r.paramters)")
         
         let task = self.urlSession.dataTask(with: request) { (data, response, error) in
             if let e = error {
-                promise.reject(with: DataManagerError.customError(message: e.localizedDescription))
+                promise.reject(with: DataManagerError.customError(message: MessageObject(code: nil, message: e.localizedDescription)))
             } else if let data = data,  let response = response as? HTTPURLResponse {
                 if response.statusCode == 200 {
                     do {
                         if let returnDic = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                            SwiftyBeaver.debug(returnDic)
-                            if self.isErrorCodeEqual201(returnDic).is201 {
+                            SwiftyBeaver.debug("response:\(returnDic)")
+                            if self.isErrorCodeEqual201(returnDic) {
                                 if let callbackErrorCode201 = self.delegate?.errorCodeEqualTo201 { callbackErrorCode201() }
-                                promise.reject(with: DataManagerError.customError(message: self.isErrorCodeEqual201(returnDic).errMsg))
+                                promise.reject(with: DataManagerError.customError(message: MessageObject(returnData: returnDic)))
                             } else if self.isSuccess(returnDic) {
                                 promise.resolve(with: data)
                             } else {
-                                if let message = returnDic["message"] as? String {
-                                    promise.reject(with: DataManagerError.customError(message: message))
-                                } else if let message = returnDic["resultMessage"] as? String {
-                                    promise.reject(with: DataManagerError.customError(message: message))
-                                } else if let message = returnDic["msg"] as? String {
-                                    promise.reject(with: DataManagerError.customError(message: message))
-                                } else {
-                                    promise.reject(with: DataManagerError.unknow)
-                                }
+                                promise.reject(with: DataManagerError.customError(message: MessageObject(returnData: returnDic)))
                             }
                         } else {
                             promise.reject(with: DataManagerError.unknow)
@@ -150,17 +141,17 @@ public final class DCCJNetwork: Client {
         return false;
     }
     
-    private func isErrorCodeEqual201(_ d: [String: Any]) -> (is201: Bool, errMsg: String) {
-        if let m = d["resultMessage"] as? String,
+    private func isErrorCodeEqual201(_ d: [String: Any]) -> Bool {
+        if let _ = d["resultMessage"] as? String,
             let code = d["resultCode"] as? String,
             code == "201" {
-            return (is201: true, errMsg: m)
-        } else if let m = d["message"] as? String,
+            return true
+        } else if let _ = d["message"] as? String,
             let code = d["code"] as? String,
             code == "201" {
-            return (is201: true, errMsg: m)
+            return true
         }
-        return (is201: false, errMsg: "")
+        return false
     }
     
     
