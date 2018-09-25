@@ -14,7 +14,7 @@
             buildForArchiving = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "A05E01D54222A2EEDC65DDFFECCEF7C1"
+               BlueprintIdentifier = "19DB243B7E151EDE70AE1998D8694099"
                BlueprintName = "DCCJConfig"
                ReferencedContainer = "container:Pods.xcodeproj"
                BuildableName = "DCCJConfig.framework">

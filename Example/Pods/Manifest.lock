@@ -4,7 +4,7 @@ PODS:
     - DCCJConfig/Result (= 0.2.3)
   - DCCJConfig/DataManagerError (0.2.3)
   - DCCJConfig/Result (0.2.3)
-  - DCCJNetwork (0.4.2):
+  - DCCJNetwork (0.4.4):
     - DCCJConfig (~> 0.2.3)
     - SwiftyBeaver
   - SwiftyBeaver (1.6.0)
@@ -23,9 +23,9 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   DCCJConfig: dca67365fabf38b598c321627bc87ece2ed097c8
-  DCCJNetwork: 75947a12a8ecb34ab1ddacd8024950a1dda06b8f
+  DCCJNetwork: 78a299590d8f566dc5ab7be515442eee6d726e79
   SwiftyBeaver: e45759613e50b522b0e6f53b1f0f14389b45ca34
 
 PODFILE CHECKSUM: 4e05ace3a85f71741cd50b929059cbfffaa49cfc
 
-COCOAPODS: 1.5.3
+COCOAPODS: 1.6.0.beta.1

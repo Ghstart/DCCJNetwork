@@ -5,7 +5,6 @@
 //  Created by 龚欢 on 2018/1/16.
 //  Copyright © 2018年 龚欢. All rights reserved.
 //
-
 import Foundation
 import DCCJConfig
 import SwiftyBeaver
@@ -32,6 +31,10 @@ public protocol Client {
     func request<T: Request>(with r: T) -> (data: Future<Data>, task: URLSessionDataTask?)
 }
 
+public protocol DCCJNetworkDelegate: class {
+    func errorCodeEqualTo201()
+}
+
 public protocol DCCJNetworkDataSource: class {
     func customHttpHeaders() -> Dictionary<String, String>
 }
@@ -43,10 +46,6 @@ public enum NetworkEnvironment: Int {
     case production
     case staging
     case message_production
-    case dccj_shl_account
-    case dccj_mkl_cashier
-    case dccj_ltm_cycleloan
-    
 }
 
 public final class DCCJNetwork: Client {
@@ -57,14 +56,12 @@ public final class DCCJNetwork: Client {
         return URLSession(configuration: config)
     }()
     
-    public static let kSerial   = Notification.Name("kSerial")
-    public static let k201Error = Notification.Name("k201Error")
-    
     public var hostMaps: [NetworkEnvironment: String] = [:]
     
     private var LOGINKEY: String        = ""
     private var encryptF: (String) -> String = { $0 }
     
+    public weak var delegate: DCCJNetworkDelegate?
     public weak var dataSource: DCCJNetworkDataSource?
     
     public init() {}
@@ -73,7 +70,7 @@ public final class DCCJNetwork: Client {
         if (!self.hostMaps.isEmpty || !self.LOGINKEY.isEmpty) {
             fatalError("Can not be modify values!!")
         }
-
+        
         self.hostMaps = hostMaps
         self.LOGINKEY = logKey
         self.encryptF = encryptMethod
@@ -108,10 +105,9 @@ public final class DCCJNetwork: Client {
                     do {
                         if let returnDic = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
                             SwiftyBeaver.debug("response:\(returnDic)")
-                            if let code = self.responseCode(returnDic), code == "201" {
-                                NotificationCenter.default.post(name: DCCJNetwork.k201Error, object: returnDic)
-                            } else if let code = self.responseCode(returnDic), code == "ROUTE_0007" {
-                                NotificationCenter.default.post(name: DCCJNetwork.kSerial, object: r)
+                            if self.isErrorCodeEqual201(returnDic) {
+                                if let callbackErrorCode201 = self.delegate?.errorCodeEqualTo201 { callbackErrorCode201() }
+                                promise.reject(with: DataManagerError.customError(message: MessageObject(returnData: returnDic)))
                             } else if self.isSuccess(returnDic) {
                                 promise.resolve(with: data)
                             } else {
@@ -144,15 +140,19 @@ public final class DCCJNetwork: Client {
         return false;
     }
     
-    private func responseCode(_ d: [String: Any]) -> String? {
-        if let code = d["resultCode"] as? String {
-            return code
-        } else if let code = d["code"] as? String {
-            return code
-        } else {
-            return nil
+    private func isErrorCodeEqual201(_ d: [String: Any]) -> Bool {
+        if let _ = d["resultMessage"] as? String,
+            let code = d["resultCode"] as? String,
+            code == "201" {
+            return true
+        } else if let _ = d["message"] as? String,
+            let code = d["code"] as? String,
+            code == "201" {
+            return true
         }
+        return false
     }
+    
     
     // MARK: -- 生成Request
     private func getRequest(type: HTTPMethod, initURL: URL, httpBody: Dictionary<String, Any>? = nil, isSign: Bool = false) -> URLRequest? {
